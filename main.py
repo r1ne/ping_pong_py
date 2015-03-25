@@ -1,3 +1,5 @@
+# coding=cp1251
+
 import Tkinter
 import tkMessageBox
 import random
@@ -8,28 +10,125 @@ import random
 3)Bitmap?
 4)Ѕольше прогить
 """
-class Ball:
+
+class GameObject:
+    def __init__(self): #конструктор класса
+        #объ€вл€ем пол€ класса
+        self.x = 0 #self - это ссылка на объект класса (в c# мы обращались к объекту через this)
+        self.y = 0
+        self.width = 0
+        self.height = 0
+        self.bgcolor = "#bbbbbb"
+
+    def __del__(self): #деструктор класса
+        pass #зарезервированное слово, которое служит как заглушка дл€ пустых методов
+
+    """
+    шаблон функции дл€ отрисовки объекта
+    ---
+    ничего не возвращает
+    bitmap - ссылка на буфер, в котором объект будет отрисовыватьс€
+    """
+    def draw(self, canvas):
+        pass
+
+    """
+    шаблон функции дл€ передачи объекту кода нажатой клавиши
+    внутри функции должен быть реализован механизм, определ€ющий,
+    нужно ли обрабатывать нажатие на кнопку с данным кодом
+    if (key == _Kakayatoknopka_):
+        dosmth()
+    else if...
+    ...
+    ---
+    ничего не возвращает
+    key - код нажатой кнопки
+    """
+    def keypressed(self, key):
+        pass
+
+
+class Ball(GameObject):
     def __init__(self):
+        #объ€вл€ем новые пол€
+        self.speed = 0
+        self.angle = 0 #пусть будет в радианах
+        self.deltaX = 0
+        self.deltaY = 0
 
-    def __del__
+        #и определ€ем пол€ родител€
+        self.x = 100
+        self.y = 100
+        self.height = 10
+        self.width = 10
+        self.bgcolor = "#ffffff"
 
-def print_hello(event):
-    tkMessageBox.showinfo("Hello","Kak cac?")
+    def __del__(self):
+        pass
 
-def render():
-    master.after(50,render)
+    def draw(self, canvas):
+        #т.к. в функцию create_rectangle надо передавать не x, y, width, height, а координаты пр€моугольника
+        x = self.x #x и self.x - разные переменные! self.x - поле класса, x - переменна€ внутри метода
+        y = self.y
+        z = self.x + self.width
+        p = self.y + self.height
+        canvas.create_rectangle(x, y, z, p, fill = self.bgcolor, outline = self.bgcolor)
 
-def draw_rectangle(event):
-    w.create_rectangle(10,10,50,50, fill = "Black")
+    def keypressed(self, key):
+        pass
 
+
+class Racket(GameObject):
+    def __init__(self):
+        self.speed
+
+    def __del__(self):
+        pass
+
+    def draw(self, canvas):
+        pass
+        #canvas.create_rectangle(width = self.width, height = self.height, fill = self.bgcolor)
+
+    def keypressed(self, key):
+        pass
+
+
+class Bonus(GameObject):
+    def __init__(self):
+        self.type
+
+    def __del__(self):
+        pass
+
+    def draw(self, canvas):
+        pass
+        #canvas.create_rectangle(width = self.width, height = self.height, fill = self.bgcolor)
+
+    def keypressed(self, key):
+        pass
+
+
+#--------------------------------
+
+def render(gameObjectsList, canvas):
+    canvas.delete("all") #очищаем экран
+
+    for item in gameObjectsList: #вызываем дл€ всех элементов списка метод отрисовки
+        item.draw(canvas)
+
+    master.after(50, render, gameObjectsList, canvas)
+
+
+#—оздаем форму, в ней - канвас
 master = Tkinter.Tk()
+canvas = Tkinter.Canvas(master, width = 800, height = 600)
+canvas.pack()
+canvas.config(background = "#111111", borderwidth = 0)
 
-w = Tkinter.Canvas(master, width = 800, height = 600)
+#—оздаем игровые объекты и добавл€ем их в список
+gameObjectsList = []
+gameObjectsList.append(Ball())
 
-w.pack()
-master.bind("<Return>", print_hello)
-master.bind("<Up>", draw_rectangle)
-
-w.config(background = "#333333", borderwidth = 0)
-render()
+#запускаем таймер с отрисовкой
+render(gameObjectsList, canvas)
 Tkinter.mainloop()
