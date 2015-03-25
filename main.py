@@ -18,8 +18,6 @@ w.pack()
 master.bind("<Return>", print_hello)
 master.bind("<Return>", w.create_rectangle(10,10,50,50, fill = "Black"))
 
-print_hello
-
 w.config(background = "#333333", borderwidth = 0)
 render()
 Tkinter.mainloop()
