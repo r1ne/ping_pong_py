@@ -4,8 +4,8 @@ import random
 
 #class Ball():
 
-def draw_rectangle(x1,y1,x2,y2):
-    w.create_rectangle(x1,y1,x2,y2, fill = "Black")
+#def draw_rectangle(x1,y1,x2,y2):
+    #w.create_rectangle(x1,y1,x2,y2, fill = "Black")
 
 def print_hello(event):
     tkMessageBox.showinfo("Hello","Kak cac?")
