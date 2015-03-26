@@ -12,13 +12,17 @@ import random
 """
 
 class GameObject:
-    def __init__(self): #конструктор класса
+    #передаем в конструктор ссылку на канвас и список объектов в игре
+    def __init__(self, canvas, gameObjectsList): #конструктор класса
         #объ€вл€ем пол€ класса
         self.x = 0 #self - это ссылка на объект класса (в c# мы обращались к объекту через this)
         self.y = 0
         self.width = 0
         self.height = 0
         self.bgcolor = "#bbbbbb"
+
+        self.canvas = canvas
+        self.gameObjectsList = gameObjectsList
 
     def __del__(self): #деструктор класса
         pass #зарезервированное слово, которое служит как заглушка дл€ пустых методов
@@ -49,7 +53,7 @@ class GameObject:
 
 
 class Ball(GameObject):
-    def __init__(self):
+    def __init__(self, canvas, gameObjectsList):
         #объ€вл€ем новые пол€
         self.speed = 0
         self.angle = 0 #пусть будет в радианах
@@ -62,24 +66,32 @@ class Ball(GameObject):
         self.height = 10
         self.width = 10
         self.bgcolor = "#ffffff"
+        self.canvas = canvas #self.canvas - поле класса, canvas - аргумент при вызове конструктора
+        self.gameObjectsList = gameObjectsList
+
+        self.move()
 
     def __del__(self):
         pass
 
-    def draw(self, canvas):
+    def draw(self):
         #т.к. в функцию create_rectangle надо передавать не x, y, width, height, а координаты пр€моугольника
         x = self.x #x и self.x - разные переменные! self.x - поле класса, x - переменна€ внутри метода
         y = self.y
         z = self.x + self.width
         p = self.y + self.height
-        canvas.create_rectangle(x, y, z, p, fill = self.bgcolor, outline = self.bgcolor)
+        self.canvas.create_rectangle(x, y, z, p, fill = self.bgcolor, outline = self.bgcolor)
 
     def keypressed(self, key):
         pass
 
+    def move(self):
+        self.x = self.x + 10
+        canvas.after(50, self.move)
+
 
 class Racket(GameObject):
-    def __init__(self):
+    def __init__(self, canvas, gameObjectsList):
         self.speed
 
     def __del__(self):
@@ -94,7 +106,7 @@ class Racket(GameObject):
 
 
 class Bonus(GameObject):
-    def __init__(self):
+    def __init__(self, canvas, gameObjectsList):
         self.type
 
     def __del__(self):
@@ -110,13 +122,13 @@ class Bonus(GameObject):
 
 #--------------------------------
 
-def render(gameObjectsList, canvas):
+def render():
     canvas.delete("all") #очищаем экран
 
     for item in gameObjectsList: #вызываем дл€ всех элементов списка метод отрисовки
-        item.draw(canvas)
+        item.draw()
 
-    master.after(50, render, gameObjectsList, canvas)
+    master.after(50, render)
 
 
 #—оздаем форму, в ней - канвас
@@ -127,8 +139,8 @@ canvas.config(background = "#111111", borderwidth = 0)
 
 #—оздаем игровые объекты и добавл€ем их в список
 gameObjectsList = []
-gameObjectsList.append(Ball())
+gameObjectsList.append(Ball(canvas, gameObjectsList))
 
 #запускаем таймер с отрисовкой
-render(gameObjectsList, canvas)
+render()
 Tkinter.mainloop()
