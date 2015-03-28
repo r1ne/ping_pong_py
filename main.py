@@ -6,8 +6,8 @@ import random
 import math
 
 """TODO:
-1)Запилить класс игровых объектов GameObject(методы - draw(), поля - x,y,width,height,bgcolor)
-2)Запилить классы-потомки GameObject'a (Ball,Racket,Bonus)
+1)Запилить класс игровых объектов GameObject(методы - draw(), поля - x,y,width,height,bgcolor)(сделано)
+2)Запилить классы-потомки GameObject'a (Ball(сделано),Racket(в процессе),Bonus(не начато))
 3)Bitmap?
 4)Больше прогить
 """
@@ -132,17 +132,31 @@ class Ball(GameObject):
 class Racket(GameObject):
     def __init__(self, canvas, gameObjectsList):
         self.speed = 50 #скорость движения ракетки в пикселях (быстро/медленно?)
-
+        self.width = 20
+        self.height = 100
+        self.bgcolor = "#ffffff"
+        self.x = 25
+        self.y = 250
+        self.side = "left"
+        self.canvas = canvas #self.canvas - поле класса, canvas - аргумент при вызове конструктора
+        self.gameObjectsList = gameObjectsList
 
     def __del__(self):
         pass
 
-    def draw(self, canvas):
-        pass
-        #canvas.create_rectangle(width = self.width, height = self.height, fill = self.bgcolor)
+    def draw(self):
+        if self.side == "left":
+            self.canvas.create_rectangle(self.x, self.y, self.x + self.width, self.y + self.height, fill = self.bgcolor, outline = self.bgcolor)
+        elif self.side == "right":
+            if self.x < 100:
+                self.x = self.canvas.winfo_reqwidth() - (self.x + self.width)
+            self.canvas.create_rectangle(self.x, self.y, self.x + self.width, self.y + self.height, fill = self.bgcolor, outline = self.bgcolor)
 
     def keypressed(self, key):
-        pass
+        # if key == "w" or key == "<Up>":
+        # self.y -= self.speed
+        # elif key == "s" or key == "<Down>":
+        #     self.y += self.speed
 
 
 class Bonus(GameObject):
@@ -159,7 +173,6 @@ class Bonus(GameObject):
     def keypressed(self, key):
         pass
 
-
 #--------------------------------
 
 def render():
@@ -173,11 +186,12 @@ def render():
 
 #Создаем форму, в ней - канвас
 master = Tkinter.Tk()
-canvas = Tkinter.Canvas(master, width = 800, height = 600, bd = 0, highlightthickness = 0, relief= 'ridge')
+canvas = Tkinter.Canvas(master, width = 800, height = 600, highlightthickness = 0, relief= 'ridge')
 #canvas.update_idletasks()
 canvas.pack()
-canvas.config(background = "#111111", closeenough = 10)
+canvas.config(background = "#111111")
 master.resizable(width = False, height = False)
+master.title("Ping-pong")
 
 #Создаем игровые объекты и добавляем их в список
 gameObjectsList = []
@@ -189,6 +203,15 @@ gameObjectsList.append(Ball(canvas, gameObjectsList))
 gameObjectsList.append(Ball(canvas, gameObjectsList))
 gameObjectsList.append(Ball(canvas, gameObjectsList))
 gameObjectsList.append(Ball(canvas, gameObjectsList))
+
+racket_left = Racket(canvas, gameObjectsList)
+gameObjectsList.append(racket_left)
+
+racket_right = Racket(canvas, gameObjectsList)
+racket_right.side = "right"
+gameObjectsList.append(racket_right)
+
+"""
 bb = Ball(canvas, gameObjectsList)
 bb.width = 30
 bb.height = 30
@@ -196,6 +219,12 @@ bb.x = 300
 bb.y = 350
 bb.bgcolor = "#ff0000"
 gameObjectsList.append(bb)
+"""
+# master.bind("w",racket_left.keypressed("w"))
+# master.bind("s",racket_left.keypressed("s"))
+# master.bind("<Up>",racket_right.keypressed("<Up>"))
+# master.bind("<Down>",racket_right.keypressed("<Down>"))
+
 #запускаем таймер с отрисовкой
 render()
 #tkMessageBox.showinfo("Title", canvas.winfo_reqheight() - 10)
