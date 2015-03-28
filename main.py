@@ -7,7 +7,7 @@ import math
 
 """TODO:
 1)«апилить класс игровых объектов GameObject(методы - draw(), пол€ - x,y,width,height,bgcolor)(сделано)
-2)«апилить классы-потомки GameObject'a (Ball(сделано),Racket(в процессе),Bonus(не начато))
+2)«апилить классы-потомки GameObject'a (Ball(сделано),Racket(нужно доделать),Bonus(не начато))
 3)Bitmap?
 4)Ѕольше прогить
 """
@@ -131,7 +131,7 @@ class Ball(GameObject):
 
 class Racket(GameObject):
     def __init__(self, canvas, gameObjectsList):
-        self.speed = 50 #скорость движени€ ракетки в пиксел€х (быстро/медленно?)
+        self.speed = 20 #скорость движени€ ракетки в пиксел€х (быстро/медленно?)
         self.width = 20
         self.height = 100
         self.bgcolor = "#ffffff"
@@ -152,11 +152,28 @@ class Racket(GameObject):
                 self.x = self.canvas.winfo_reqwidth() - (self.x + self.width)
             self.canvas.create_rectangle(self.x, self.y, self.x + self.width, self.y + self.height, fill = self.bgcolor, outline = self.bgcolor)
 
-    def keypressed(self, key):
-        # if key == "w" or key == "<Up>":
-        # self.y -= self.speed
-        # elif key == "s" or key == "<Down>":
-        #     self.y += self.speed
+    def keypressed(self, event):    #TODO:сделать так, чтобы можно сразу две плашки двигать
+        #вдобавок это дерьмо чувствительно к раскладке
+        if event.keysym == 'w' or event.char == "":#€ не знаю как различать стрелки вверх и вниз в этом случае(мудак просто), поэтому ниже будет отдельна€ функци€
+            if self.y > 10 or self.y + self.height < self.canvas.winfo_reqheight() - 10:
+                if self.y - self.speed < 10:
+                    self.y = 10
+                else:
+                    self.y -= self.speed
+
+        elif event.keysym == "s":
+            if self.y + self.height < self.canvas.winfo_reqheight() - 10:
+                if (self.y + self.speed > self.canvas.winfo_reqheight() - 10):
+                    self.y = self.canvas.winfo_reqheight() - (10 + self.height)
+                else:
+                    self.y +=self.speed
+
+    def keypressedDown(self, event):
+        if self.y + self.height < self.canvas.winfo_reqheight() - 10:
+            if (self.y + self.speed > self.canvas.winfo_reqheight() - 10):
+                self.y = self.canvas.winfo_reqheight() - (10 + self.height)
+            else:
+                self.y +=self.speed
 
 
 class Bonus(GameObject):
@@ -220,11 +237,10 @@ bb.y = 350
 bb.bgcolor = "#ff0000"
 gameObjectsList.append(bb)
 """
-# master.bind("w",racket_left.keypressed("w"))
-# master.bind("s",racket_left.keypressed("s"))
-# master.bind("<Up>",racket_right.keypressed("<Up>"))
-# master.bind("<Down>",racket_right.keypressed("<Down>"))
-
+master.bind("w",racket_left.keypressed)
+master.bind("s",racket_left.keypressed)
+master.bind("<Up>",racket_right.keypressed)
+master.bind("<Down>",racket_right.keypressedDown)
 #запускаем таймер с отрисовкой
 render()
 #tkMessageBox.showinfo("Title", canvas.winfo_reqheight() - 10)
