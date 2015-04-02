@@ -7,28 +7,34 @@ import math
 
 
 class GameObjectManager:
-    """docstring for GameObjectManager"""
     def __init__(self, canvas, master):
         self.canvas = canvas
         self.master = master
         self.gameObjects = []
 
+        self.moveObjects()
+
     def addObject(self, obj):
         self.gameObjects.append(obj)
 
-    def addBall(self, x=0, y=0, angle=0, speed=5, size=20, bg="#ffffff"):
-        b = Ball(self.canvas, x, y, angle, speed, size, bg)
+    def addBall(self, x=0, y=0, angle=0, speed=7, size=20, bg="#ffffff"):
+        b = Ball(self, x, y, angle, speed, size, bg)
         self.gameObjects.append(b)
 
+    def moveObjects(self):
+        for item in self.gameObjects:
+            item.move()
+
+        self.master.after(25, self.moveObjects)
 
 class Ball:
-    def __init__(self, canvas, x=0, y=0, angle=0, speed=10, size=20, bg="#ffffff"):
-        # объ€вл€ем новые пол€
+    def __init__(self, gameObjectManager, x=0, y=0, angle=0, speed=10, size=20, bg="#ffffff"):
+        self.gameObjectManager = gameObjectManager
         self.speed = speed
         self.angle = angle  # в радианах
         self.delta = self.calc_projections(self.speed, self.angle)
+        self.collision = False
 
-        # и определ€ем пол€ родител€
         self.x = x
         self.y = y
         self.height = size
@@ -72,54 +78,94 @@ class Ball:
         pass
 
     def move(self):
-        #p = self.hit_detection()
-        #if p != 0:
-            #if (self.x + self.width >= p.x) or (self.x <= p.x + p.width):
-                #self.deltaX = -self.deltaX
-            #elif (self.y + self.height >= p.y) or (self.y <= p.y + p.height):
-                #self.deltaY = -self.deltaY
+        item = self.hit_detection()
+        self.collision = False
+        if item != 0:
+            item.collision = False
+
+            # self должен быть наименьшим из м€чей
+            if (self.width > item.width) and (self.height > item.height):
+                s = item
+                p = self
+            else:
+                s = self
+                p = item
+
+
+            if (s.right() <= p.left()) or (s.left() >= p.right()):
+                # если оба м€ча лет€т вправо, то отталкиваем левый
+                if (s.delta.x > 0) and (p.delta.x > 0):
+                    if (s.x > p.x):
+                        p.delta.x = -p.delta.x
+                    else:
+                        s.delta.x = -s.delta.x
+                # если оба м€ча лет€т влево, то отталкиваем правый
+                elif (s.delta.x < 0) and (p.delta.x < 0):
+                    if (s.x > p.x):
+                        s.delta.x = -s.delta.x
+                    else:
+                        p.delta.x = -p.delta.x
+                else:
+                    s.delta.x = -s.delta.x
+                    p.delta.x = -p.delta.x
+
+            elif (s.bottom() <= p.top()) or (s.top() >= p.bottom()):
+                #если оба м€ча лет€т вниз, то отталкиваем верхний
+                if (s.delta.y > 0) and (p.delta.y > 0):
+                    if (s.y > p.y):
+                        p.delta.y = -p.delta.y
+                    else:
+                        s.delta.y = -s.delta.y
+                elif (s.delta.y < 0) and (s.delta.y < 0):
+                    if (s.y > p.y):
+                        s.delta.y = -s.delta.y
+                    else:
+                        p.delta.y = -p.delta.y
+                else:
+                    s.delta.y = -s.delta.y
+                    p.delta.y = -p.delta.y
+
+        # ширина канваса
+        cwidth = self.canvas.winfo_reqwidth()
+        # высота канваса
+        cheight = self.canvas.winfo_reqheight()
 
         # обрабатываем выход за поле
-        if (self.x <= 0) or (self.right() >= self.canvas.winfo_reqwidth()):
+        # права€ граница пол€
+        if (self.right() + self.delta.x >= cwidth):
             self.delta.x = -self.delta.x
 
-        if (self.y <= 0) or (self.bottom() >= self.canvas.winfo_reqheight()):
+        # лева€ граница пол€
+        if (self.left() - abs(self.delta.x) <= 0):
+            self.delta.x = -self.delta.x
+
+        # верхн€€ граница пол€
+        if (self.top() + self.delta.y <= 0):
             self.delta.y = -self.delta.y
-        #if self.x - abs(self.delta.x) <= 0:
-            #self.x = self.x - self.delta.x
-            #self.delta.x = -self.delta.x
 
-        #if abs(self.canvas.winfo_reqwidth() - self.right() <= self.delta.x):
-            #self.x = self.canvas.winfo_reqwidth() - \
-                    #(-self.canvas.winfo_reqwidth() + self.delta.x + self.right())
-            #self.delta.x = -self.delta.x
-
-        #if self.y - abs(self.delta.y) <= 0:
-            #self.y = self.y - self.delta.y
-            #self.delta.y = -self.delta.y
-
-        #if abs(self.canvas.winfo_reqheight() - self.bottom() <= self.delta.y):
-            #self.y = self.canvas.winfo_reqheight() - \
-                    #(-self.canvas.winfo_reqheight() + self.delta.y + self.bottom())
-            #self.delta.y = -self.delta.y
+        # нижн€€ граница пол€
+        if (self.bottom() + self.delta.y >= cheight):
+            self.delta.y = -self.delta.y
 
         self.x = self.x + self.delta.x
         self.y = self.y + self.delta.y
 
         self.canvas.move(self.id, self.delta.x, self.delta.y)
-        canvas.after(50, self.move)
 
-    #def hit_detection(self):
-        #for item in gameObjectsList:
-            #if item == self:
-                #continue
-            #if (self.x + self.width + self.deltaX >= item.x) and \
-              #(self.x + self.deltaX <= item.x + item.width) and \
-              #(self.y + self.deltaY + self.height >= item.y) and \
-              #(self.y + self.deltaY <= item.y + item.height):
-                #return item
+    def hit_detection(self):
+        for item in self.gameObjectManager.gameObjects:
+            if (item == self) or (self.collision == True):
+                continue
 
-        #return 0
+            if (self.right() + self.delta.x >= item.x) and \
+              (self.x + self.delta.x <= item.right()) and \
+              (self.bottom() + self.delta.y >= item.y) and \
+              (self.y + self.delta.y <= item.bottom()):
+                item.collision = True
+                self.collission = True
+                return item
+
+        return 0
 
 
 class Racket:
@@ -188,16 +234,75 @@ class Bonus:
 # —оздаем форму, в ней - канвас
 master = Tkinter.Tk()
 canvas = Tkinter.Canvas(master, width=800, height=600, highlightthickness=0, relief='ridge')
-# canvas.update_idletasks()
+
 canvas.pack()
 canvas.config(background="#111111")
 master.resizable(width=False, height=False)
 master.title("Ping-pong")
 
 gm = GameObjectManager(canvas, master)
-gm.addBall(10, 20, random.uniform(0, math.pi * 2), random.randint(10, 30), 20, "#ff0000")
-gm.addBall(10, 20, random.uniform(0, math.pi * 2), random.randint(10, 30), 20, "red")
-gm.addBall(10, 20, random.uniform(0, math.pi * 2), random.randint(10, 30), 20, "red")
-gm.addBall(10, 20, random.uniform(0, math.pi * 2), random.randint(10, 30), 20, "red")
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#b0e828")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#0ea9f1")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#f10e79")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#e7c81e")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#b0e828")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#0ea9f1")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#f10e79")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#e7c81e")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#b0e828")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#0ea9f1")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#f10e79")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#e7c81e")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#b0e828")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 15)\
+        , 20, "#0ea9f1")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 16)\
+        , 20, "#f10e79")
+
+gm.addBall(random.randint(100,700), random.randint(100, 500), \
+        random.uniform(0, math.pi * 2), random.randint(5, 16)\
+        , 20, "#e7c81e")
 
 Tkinter.mainloop()
