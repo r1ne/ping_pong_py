@@ -91,48 +91,62 @@ class Ball:
         item = self.hit_detection()
         self.collision = False
         if item != 0:
-            item.collision = False
+            if (item.type == "ball"):
+                item.collision = False
 
-            # self должен быть наименьшим из м€чей
-            if (self.width > item.width) and (self.height > item.height):
-                s = item
-                p = self
-            else:
-                s = self
-                p = item
+                # self должен быть наименьшим из м€чей
+                if (self.width > item.width) and (self.height > item.height):
+                    s = item
+                    p = self
+                else:
+                    s = self
+                    p = item
 
-            if (s.right() <= p.left()) or (s.left() >= p.right()):
-                # если оба м€ча лет€т вправо, то отталкиваем левый
-                if (s.delta.x > 0) and (p.delta.x > 0):
-                    if (s.x > p.x):
-                        p.delta.x = -p.delta.x
+                if (s.right() <= p.left()) or (s.left() >= p.right()):
+                    # если оба м€ча лет€т вправо, то отталкиваем левый
+                    if (s.delta.x > 0) and (p.delta.x > 0):
+                        if (s.x > p.x):
+                            p.delta.x = -p.delta.x
+                        else:
+                            s.delta.x = -s.delta.x
+                    # если оба м€ча лет€т влево, то отталкиваем правый
+                    elif (s.delta.x < 0) and (p.delta.x < 0):
+                        if (s.x > p.x):
+                            s.delta.x = -s.delta.x
+                        else:
+                            p.delta.x = -p.delta.x
                     else:
                         s.delta.x = -s.delta.x
-                # если оба м€ча лет€т влево, то отталкиваем правый
-                elif (s.delta.x < 0) and (p.delta.x < 0):
-                    if (s.x > p.x):
-                        s.delta.x = -s.delta.x
-                    else:
                         p.delta.x = -p.delta.x
-                else:
-                    s.delta.x = -s.delta.x
-                    p.delta.x = -p.delta.x
 
-            elif (s.bottom() <= p.top()) or (s.top() >= p.bottom()):
-                #если оба м€ча лет€т вниз, то отталкиваем верхний
-                if (s.delta.y > 0) and (p.delta.y > 0):
-                    if (s.y > p.y):
-                        p.delta.y = -p.delta.y
+                elif (s.bottom() <= p.top()) or (s.top() >= p.bottom()):
+                    #если оба м€ча лет€т вниз, то отталкиваем верхний
+                    if (s.delta.y > 0) and (p.delta.y > 0):
+                        if (s.y > p.y):
+                            p.delta.y = -p.delta.y
+                        else:
+                            s.delta.y = -s.delta.y
+                    elif (s.delta.y < 0) and (s.delta.y < 0):
+                        if (s.y > p.y):
+                            s.delta.y = -s.delta.y
+                        else:
+                            p.delta.y = -p.delta.y
                     else:
                         s.delta.y = -s.delta.y
-                elif (s.delta.y < 0) and (s.delta.y < 0):
-                    if (s.y > p.y):
-                        s.delta.y = -s.delta.y
-                    else:
                         p.delta.y = -p.delta.y
-                else:
-                    s.delta.y = -s.delta.y
-                    p.delta.y = -p.delta.y
+            elif (item.type == "racket"):  # если м€ч self столкнулс€ с ракеткой item
+                if (self.right() <= item.left()): # если м€ч левее ракетки
+                    # 2.35619449 - 135 градусов в радианах, 
+                    # 1.91986218 - 110 градусов в радианах
+                    angle = -(2.35619449 + 1.91986218 * (self.y - item.y) / item.height)
+                    self.delta = self.calc_projections(self.speed, angle)
+                elif (self.left() >= item.right()): # если м€ч правее ракетки
+                    # 0.785398163 - 45 градусов в радианах 
+                    # 1.9198621 - 110 градусов в радианах
+                    angle = -(0.785398163 - 1.91986218 * (self.y - item.y) / item.height)
+                    self.delta = self.calc_projections(self.speed, angle)
+                else: # FIXME: сделать нормальное отбивание м€чика ракеткой сверху и снизу
+                    self.delta.y = -self.delta.y
 
         # ширина канваса
         cwidth = self.canvas.winfo_reqwidth()
@@ -163,18 +177,16 @@ class Ball:
 
     def hit_detection(self):
         for item in self.gameObjectManager.gameObjects:
-            if (item == self) or (self.collision == True) or \
-                    (item.type != "ball"):
+            if (item == self) or (self.collision == True):
                 continue
 
             if (self.right() + self.delta.x >= item.x) and \
-              (self.x + self.delta.x <= item.right()) and \
-              (self.bottom() + self.delta.y >= item.y) and \
-              (self.y + self.delta.y <= item.bottom()):
+            (self.x + self.delta.x <= item.right()) and \
+            (self.bottom() + self.delta.y >= item.y) and \
+            (self.y + self.delta.y <= item.bottom()):
                 item.collision = True
-                self.collission = True
+                self.collision = True
                 return item
-
         return 0
 
 
@@ -208,14 +220,14 @@ class Racket:
         pass
 
     def key_pressed(self, char):
-            if (char.keysym == self.moveupkey):
-                if (self.timerup == False):
-                    self.timerup = True
-                    self.moveup_timer()
-            elif (char.keysym == self.movedownkey):
-                if (self.timerdown == False):
-                    self.timerdown = True
-                    self.movedown_timer()
+        if (char.keysym == self.moveupkey):
+            if (self.timerup == False):
+                self.timerup = True
+                self.moveup_timer()
+        elif (char.keysym == self.movedownkey):
+            if (self.timerdown == False):
+                self.timerdown = True
+                self.movedown_timer()
 
     def key_released(self, char):
         if (char.keysym == self.moveupkey):
@@ -298,5 +310,6 @@ for i in range(0, 4):
 
 gm.addRacket(20, 10)
 gm.addRacket(canvas.winfo_reqwidth() - 40, 10, "i", "k")
+gm.addRacket(canvas.winfo_reqwidth()/2 - 10, 300, "y", "h")
 
 Tkinter.mainloop()
