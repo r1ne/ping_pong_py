@@ -9,42 +9,52 @@ import math
 class GameObjectManager:
     def __init__(self, canvas, master):
         self.canvas = canvas
-        self.master = master
         self.gameObjects = []
+        self.master = master
 
         self.moveObjects()
+
+    def addRacket(self, x=0, y=0, moveupkey="w", movedownkey="s", width=20, \
+            height=80, bgcolor="#ffffff"):
+        r = Racket(self, x, y, moveupkey, movedownkey, width, height, bgcolor)
+        self.gameObjects.append(r)
 
     def addObject(self, obj):
         self.gameObjects.append(obj)
 
-    def addBall(self, x=0, y=0, angle=0, speed=7, size=20, bg="#ffffff"):
-        b = Ball(self, x, y, angle, speed, size, bg)
+    def addBall(self, x=0, y=0, angle=0, speed=7, size=20, bgcolor="#ffffff"):
+        b = Ball(self, x, y, angle, speed, size, bgcolor)
         self.gameObjects.append(b)
 
     def moveObjects(self):
         for item in self.gameObjects:
-            item.move()
+            if (item.type == "ball"):
+                item.move()
 
         self.master.after(25, self.moveObjects)
 
 class Ball:
-    def __init__(self, gameObjectManager, x=0, y=0, angle=0, speed=10, size=20, bg="#ffffff"):
-        self.gameObjectManager = gameObjectManager
-        self.speed = speed
-        self.angle = angle  # в радианах
-        self.delta = self.calc_projections(self.speed, self.angle)
-        self.collision = False
+    def __init__(self, gameObjectManager, x=0, y=0, angle=0,\
+            speed=10, size=20, bgcolor="#ffffff"):
 
+        self.angle = angle  # в радианах
+        self.bgcolor = bgcolor
+        self.canvas = canvas
+        self.collision = False
+        self.delta = ()
+        self.gameObjectManager = gameObjectManager
+        self.height = size
+        self.id = 0
+        self.speed = speed
+        self.type = "ball"
+        self.width = size
         self.x = x
         self.y = y
-        self.height = size
-        self.width = size
-        self.bgcolor = bg
-        self.canvas = canvas
+
         self.id = self.canvas.create_rectangle(self.left(), self.top(), \
                 self.right(), self.bottom(), fill=self.bgcolor, \
                 outline=self.bgcolor)
-
+        self.delta = self.calc_projections(self.speed, self.angle)
         self.move()
 
     def __del__(self):
@@ -90,7 +100,6 @@ class Ball:
             else:
                 s = self
                 p = item
-
 
             if (s.right() <= p.left()) or (s.left() >= p.right()):
                 # если оба мяча летят вправо, то отталкиваем левый
@@ -154,7 +163,8 @@ class Ball:
 
     def hit_detection(self):
         for item in self.gameObjectManager.gameObjects:
-            if (item == self) or (self.collision == True):
+            if (item == self) or (self.collision == True) or \
+                    (item.type != "ball"):
                 continue
 
             if (self.right() + self.delta.x >= item.x) and \
@@ -169,51 +179,77 @@ class Ball:
 
 
 class Racket:
-    def __init__(self, canvas):
-        self.speed = 20  # скорость движения ракетки в пикселях
-        self.width = 20
-        self.height = 100
-        self.bgcolor = "# ffffff"
-        self.x = 25
-        self.y = 250
-        self.side = "left"
-        self.canvas = canvas
+    def __init__(self, gameObjectManager, x=0, y=0, \
+            moveupkey="w", movedownkey="s", width=20, \
+            height=80, bgcolor="#ffffff"):
+
+        self.bgcolor = bgcolor
+        self.canvas = gameObjectManager.canvas
+        self.gameObjectManager = gameObjectManager
+        self.height = height
+        self.id = 0
+        self.movedownkey = movedownkey
+        self.moveupkey = moveupkey
+        self.speed = 10  # скорость движения ракетки в пикселях
+        self.timerdown = False
+        self.timerup = False
+        self.type = "racket"
+        self.width = width
+        self.x = x
+        self.y = y
+
+        self.id = canvas.create_rectangle(self.x, self.y, self.right(),\
+                self.bottom(), fill=bgcolor, outline=bgcolor)
+
+        master.bind("<KeyPress>", self.key_pressed, add="+")
+        master.bind("<KeyRelease>", self.key_released, add="+")
 
     def __del__(self):
         pass
 
-    def draw(self):
-        if self.side == "left":
-            self.canvas.create_rectangle(self.x, self.y, self.x + self.width, \
-                    self.y + self.height, fill=self.bgcolor, outline=self.bgcolor)
-        elif self.side == "right":
-            if self.x < 100:
-                self.x = self.canvas.winfo_reqwidth() - (self.x + self.width)
-            self.canvas.create_rectangle(self.x, self.y, self.x + self.width, \
-                    self.y + self.height, fill=self.bgcolor, outline=self.bgcolor)
+    def key_pressed(self, char):
+            if (char.keysym == self.moveupkey):
+                if (self.timerup == False):
+                    self.timerup = True
+                    self.moveup_timer()
+            elif (char.keysym == self.movedownkey):
+                if (self.timerdown == False):
+                    self.timerdown = True
+                    self.movedown_timer()
 
-    def keypressed(self, event):  #TODO:сделать так, чтобы можно сразу две плашки двигать
-        # вдобавок это дерьмо чувствительно к раскладке
-        if event.keysym == 'w' or event.char == "":
-            if self.y > 10 or self.y + self.height < self.canvas.winfo_reqheight() - 10:
-                if self.y - self.speed < 10:
-                    self.y = 10
-                else:
-                    self.y -= self.speed
+    def key_released(self, char):
+        if (char.keysym == self.moveupkey):
+            self.timerup = False
+        elif (char.keysym == self.movedownkey):
+            self.timerdown = False
 
-        elif event.keysym == "s":
-            if self.y + self.height < self.canvas.winfo_reqheight() - 10:
-                if (self.y + self.speed > self.canvas.winfo_reqheight() - 10):
-                    self.y = self.canvas.winfo_reqheight() - (10 + self.height)
-                else:
-                    self.y += self.speed
+    def moveup_timer(self):
+        if (self.y > 20):
+            self.y = self.y - self.speed
+            self.canvas.move(self.id, 0, -self.speed)
 
-    def keypressedDown(self, event):
-        if self.y + self.height < self.canvas.winfo_reqheight() - 10:
-            if (self.y + self.speed > self.canvas.winfo_reqheight() - 10):
-                self.y = self.canvas.winfo_reqheight() - (10 + self.height)
-            else:
-                self.y += self.speed
+        if (self.timerup):
+            self.gameObjectManager.master.after(20, self.moveup_timer)
+
+    def movedown_timer(self):
+        if (self.bottom() < self.canvas.winfo_reqheight() - 20):
+            self.y = self.y + self.speed
+            self.canvas.move(self.id, 0, self.speed)
+
+        if (self.timerdown):
+            self.gameObjectManager.master.after(20, self.movedown_timer)
+
+    def left(self):
+        return self.x
+
+    def top(self):
+        return self.y
+
+    def right(self):
+        return self.x + self.width
+
+    def bottom(self):
+        return self.y + self.height
 
 
 class Bonus:
@@ -233,7 +269,8 @@ class Bonus:
 
 # Создаем форму, в ней - канвас
 master = Tkinter.Tk()
-canvas = Tkinter.Canvas(master, width=800, height=600, highlightthickness=0, relief='ridge')
+canvas = Tkinter.Canvas(master, width=800, height=600, \
+        highlightthickness=0, relief='ridge')
 
 canvas.pack()
 canvas.config(background="#111111")
@@ -241,68 +278,25 @@ master.resizable(width=False, height=False)
 master.title("Ping-pong")
 
 gm = GameObjectManager(canvas, master)
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#b0e828")
 
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#0ea9f1")
+for i in range(0, 4):
+    gm.addBall(random.randint(100, 700), random.randint(100, 500), \
+            random.uniform(0, math.pi * 2), random.randint(5, 15)\
+            , 20, "#b0e828")
 
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#f10e79")
+    gm.addBall(random.randint(100, 700), random.randint(100, 500), \
+            random.uniform(0, math.pi * 2), random.randint(5, 15)\
+            , 20, "#0ea9f1")
 
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#e7c81e")
+    gm.addBall(random.randint(100, 700), random.randint(100, 500), \
+            random.uniform(0, math.pi * 2), random.randint(5, 15)\
+            , 20, "#f10e79")
 
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#b0e828")
+    gm.addBall(random.randint(100, 700), random.randint(100, 500), \
+            random.uniform(0, math.pi * 2), random.randint(5, 15)\
+            , 20, "#e7c81e")
 
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#0ea9f1")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#f10e79")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#e7c81e")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#b0e828")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#0ea9f1")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#f10e79")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#e7c81e")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#b0e828")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 15)\
-        , 20, "#0ea9f1")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 16)\
-        , 20, "#f10e79")
-
-gm.addBall(random.randint(100,700), random.randint(100, 500), \
-        random.uniform(0, math.pi * 2), random.randint(5, 16)\
-        , 20, "#e7c81e")
+gm.addRacket(20, 10)
+gm.addRacket(canvas.winfo_reqwidth() - 40, 10, "i", "k")
 
 Tkinter.mainloop()
