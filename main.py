@@ -1,4 +1,4 @@
-#  coding=cp1251
+# coding=cp1251
 
 import Tkinter
 import tkMessageBox
@@ -7,10 +7,26 @@ import math
 
 
 class GameObjectManager:
+    class Score:
+        def __init__(self, canvas):
+            self.left = 0
+            self.right = 0
+            self.canvas = canvas
+
+            self.id = self.canvas.create_text(0, 0)
+
+        def inc_left(self):
+            self.left = self.left + 1
+
+        def inc_right(self):
+            self.right = self.right + 1
+
+
     def __init__(self, canvas, master):
         self.canvas = canvas
         self.gameObjects = []
         self.master = master
+        self.score = self.Score(self.canvas)
 
         self.moveObjects()
 
@@ -27,11 +43,20 @@ class GameObjectManager:
         self.gameObjects.append(b)
 
     def moveObjects(self):
+        cwidth = 0
+        cheight = 0
         for item in self.gameObjects:
+            cwidth = self.master.winfo_reqwidth()
+            #cheight = self.master.winfo_reqheight()
             if (item.type == "ball"):
                 item.move()
+                if (item.left() <= 10):
+                    self.score.inc_left()
+                elif (item.right() >= cwidth - 10):
+                    self.score.inc_right()
 
         self.master.after(25, self.moveObjects)
+
 
 class Ball:
     def __init__(self, gameObjectManager, x=0, y=0, angle=0,\
@@ -134,19 +159,30 @@ class Ball:
                     else:
                         s.delta.y = -s.delta.y
                         p.delta.y = -p.delta.y
+
             elif (item.type == "racket"):  # если мяч self столкнулся с ракеткой item
                 if (self.right() <= item.left()): # если мяч левее ракетки
-                    # 2.35619449 - 135 градусов в радианах, 
+                    # 2.35619449 - 135 градусов в радианах,
                     # 1.91986218 - 110 градусов в радианах
                     angle = -(2.35619449 + 1.91986218 * (self.y - item.y) / item.height)
                     self.delta = self.calc_projections(self.speed, angle)
                 elif (self.left() >= item.right()): # если мяч правее ракетки
-                    # 0.785398163 - 45 градусов в радианах 
+                    # 0.785398163 - 45 градусов в радианах
                     # 1.9198621 - 110 градусов в радианах
                     angle = -(0.785398163 - 1.91986218 * (self.y - item.y) / item.height)
                     self.delta = self.calc_projections(self.speed, angle)
-                else: # FIXME: сделать нормальное отбивание мячика ракеткой сверху и снизу
-                    self.delta.y = -self.delta.y
+                elif ((self.bottom() + self.delta.y >= item.top()) or\
+                     (item.timerup) and (self.bottom() + self.delta.y >= item.top() - item.speed))\
+                     and (self.bottom() <= item.height / 2 + item.top()):
+                        # 1.22111111 - 75 градусов в радианах
+                        # 0.52333333 - 30 градусов в радианах
+                        angle = -(1.22111111 - 0.52333333 * (self.x - item.x) / item.width)
+                        self.delta = self.calc_projections(self.speed, angle)
+                elif (self.top() + self.delta.y <= item.bottom()) or\
+                     (item.timerdown) and (self.top() + self.delta.y <= item.bottom() + item.speed):
+                        # 4.9716666 - 285 градусов в радианах
+                        angle = -(4.9716666 + 0.52333333 * (self.x - item.x) / item.width)
+                        self.delta = self.calc_projections(self.speed, angle)
 
         # ширина канваса
         cwidth = self.canvas.winfo_reqwidth()
@@ -291,25 +327,8 @@ master.title("Ping-pong")
 
 gm = GameObjectManager(canvas, master)
 
-for i in range(0, 4):
-    gm.addBall(random.randint(100, 700), random.randint(100, 500), \
-            random.uniform(0, math.pi * 2), random.randint(5, 15)\
-            , 20, "#b0e828")
-
-    gm.addBall(random.randint(100, 700), random.randint(100, 500), \
-            random.uniform(0, math.pi * 2), random.randint(5, 15)\
-            , 20, "#0ea9f1")
-
-    gm.addBall(random.randint(100, 700), random.randint(100, 500), \
-            random.uniform(0, math.pi * 2), random.randint(5, 15)\
-            , 20, "#f10e79")
-
-    gm.addBall(random.randint(100, 700), random.randint(100, 500), \
-            random.uniform(0, math.pi * 2), random.randint(5, 15)\
-            , 20, "#e7c81e")
-
+gm.addBall(400, 300, 0, 10, 20)
 gm.addRacket(20, 10)
 gm.addRacket(canvas.winfo_reqwidth() - 40, 10, "i", "k")
-gm.addRacket(canvas.winfo_reqwidth()/2 - 10, 300, "y", "h")
 
 Tkinter.mainloop()
