@@ -14,9 +14,9 @@ class GameObjectManager:
             self.right = 0
             self.canvas = canvas
 
+            gfont =  tkFont.Font(family='Segoe', weight="bold", size=86)
             self.id = self.canvas.create_text(100, 100, text="SCORE", \
-                    fill="#888888", font=tkFont.Font(family='Courier New', \
-                    size=36))
+                    fill="#222222", font=gfont)
             self.change_text()
 
         def inc_left(self):
@@ -30,11 +30,12 @@ class GameObjectManager:
         def change_text(self):
             self.canvas.itemconfig(self.id, \
                     text="{}:{}".format(self.left, self.right))
-            bounds = self.canvas.bbox(self.id)
-            cwidth = bounds[2] - bounds[0]
-            cheight = bounds[3] - bounds[1]
-            self.canvas.coords(self.id, (self.canvas.winfo_reqwidth() - cwidth) / 2, \
-                    self.canvas.winfo_reqheight() - cheight)
+            # bounds = self.canvas.bbox(self.id)
+            # width = bounds[2] - bounds[0]
+            # height = bounds[3] - bounds[1]
+            self.canvas.coords(self.id, self.canvas.winfo_reqwidth() / 2, \
+                    self.canvas.winfo_reqheight() / 2)
+
 
     def __init__(self, canvas, master):
         self.canvas = canvas
@@ -42,7 +43,31 @@ class GameObjectManager:
         self.master = master
         self.score = self.Score(self.canvas)
 
-        self.moveObjects()
+        self.paused = 0
+        gfont = font=tkFont.Font(family='Segoe', slant="italic", size=32)
+        left = self.canvas.winfo_reqwidth() / 2
+        top = self.canvas.winfo_reqheight() / 2
+        self.pauseshadow = self.canvas.create_text(left + 1, top + 1, text="timeout", \
+                fill="#000000", font=gfont, state="hidden")
+        self.pauseid = self.canvas.create_text(left, top, text="timeout", \
+                fill="#ffffff", font=gfont, state="hidden")
+
+        master.bind("<F9>", self.pause, add="+")
+
+        self.tick()
+
+    def pause(self, pause_time=0):
+        if (self.paused):
+            self.unpause()
+        else:
+            self.paused = 1
+            self.canvas.itemconfig(self.pauseid, state="normal")
+            self.canvas.itemconfig(self.pauseshadow, state="normal")
+
+    def unpause(self):
+        self.paused = 0
+        self.canvas.itemconfig(self.pauseid, state="hidden")
+        self.canvas.itemconfig(self.pauseshadow, state="hidden")
 
     def addRacket(self, x=0, y=0, moveupkey="w", movedownkey="s", width=20, \
             height=80, bgcolor="#ffffff"):
@@ -56,20 +81,17 @@ class GameObjectManager:
         b = Ball(self, x, y, angle, speed, size, bgcolor)
         self.gameObjects.append(b)
 
-    def moveObjects(self):
-        cwidth = 0
-        cheight = 0
-        for item in self.gameObjects:
-            cwidth = self.master.winfo_reqwidth()
-            #cheight = self.master.winfo_reqheight()
-            if (item.type == "ball"):
-                item.move()
-                # if (item.left() <= 10):
-                    # self.score.inc_left()
-                # elif (item.right() >= cwidth - 10):
-                    # self.score.inc_right()
+    def tick(self):
+        if not(self.paused):
+            cwidth = 0
+            cheight = 0
+            for item in self.gameObjects:
+                cwidth = self.master.winfo_reqwidth()
+                #cheight = self.master.winfo_reqheight()
+                if (item.type == "ball"):
+                    item.move()
 
-        self.master.after(8, self.moveObjects)
+        self.master.after(8, self.tick)
 
 
 class Ball:
@@ -290,17 +312,19 @@ class Racket:
             self.timerdown = False
 
     def moveup_timer(self):
-        if (self.y > 20):
-            self.y = self.y - self.speed
-            self.canvas.move(self.id, 0, -self.speed)
+        if not(self.gameObjectManager.paused):
+            if (self.y > 20):
+                self.y = self.y - self.speed
+                self.canvas.move(self.id, 0, -self.speed)
 
         if (self.timerup):
             self.gameObjectManager.master.after(20, self.moveup_timer)
 
     def movedown_timer(self):
-        if (self.bottom() < self.canvas.winfo_reqheight() - 20):
-            self.y = self.y + self.speed
-            self.canvas.move(self.id, 0, self.speed)
+        if not(self.gameObjectManager.paused):
+            if (self.bottom() < self.canvas.winfo_reqheight() - 20):
+                self.y = self.y + self.speed
+                self.canvas.move(self.id, 0, self.speed)
 
         if (self.timerdown):
             self.gameObjectManager.master.after(20, self.movedown_timer)
