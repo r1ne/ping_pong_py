@@ -1,6 +1,7 @@
 # coding=cp1251
 
 import Tkinter
+import tkFont
 import tkMessageBox
 import random
 import math
@@ -13,14 +14,27 @@ class GameObjectManager:
             self.right = 0
             self.canvas = canvas
 
-            self.id = self.canvas.create_text(0, 0)
+            self.id = self.canvas.create_text(100, 100, text="SCORE", \
+                    fill="#888888", font=tkFont.Font(family='Courier New', \
+                    size=36))
+            self.change_text()
 
         def inc_left(self):
             self.left = self.left + 1
+            self.change_text()
 
         def inc_right(self):
             self.right = self.right + 1
+            self.change_text()
 
+        def change_text(self):
+            self.canvas.itemconfig(self.id, \
+                    text="{}:{}".format(self.left, self.right))
+            bounds = self.canvas.bbox(self.id)
+            cwidth = bounds[2] - bounds[0]
+            cheight = bounds[3] - bounds[1]
+            self.canvas.coords(self.id, (self.canvas.winfo_reqwidth() - cwidth) / 2, \
+                    self.canvas.winfo_reqheight() - cheight)
 
     def __init__(self, canvas, master):
         self.canvas = canvas
@@ -50,21 +64,21 @@ class GameObjectManager:
             #cheight = self.master.winfo_reqheight()
             if (item.type == "ball"):
                 item.move()
-                if (item.left() <= 10):
-                    self.score.inc_left()
-                elif (item.right() >= cwidth - 10):
-                    self.score.inc_right()
+                # if (item.left() <= 10):
+                    # self.score.inc_left()
+                # elif (item.right() >= cwidth - 10):
+                    # self.score.inc_right()
 
-        self.master.after(25, self.moveObjects)
+        self.master.after(8, self.moveObjects)
 
 
 class Ball:
     def __init__(self, gameObjectManager, x=0, y=0, angle=0,\
             speed=10, size=20, bgcolor="#ffffff"):
 
-        self.angle = angle  # в радианах
+        self.angle = angle
         self.bgcolor = bgcolor
-        self.canvas = canvas
+        self.canvas = gameObjectManager.canvas
         self.collision = False
         self.delta = ()
         self.gameObjectManager = gameObjectManager
@@ -119,7 +133,6 @@ class Ball:
             if (item.type == "ball"):
                 item.collision = False
 
-                # self должен быть наименьшим из мячей
                 if (self.width > item.width) and (self.height > item.height):
                     s = item
                     p = self
@@ -128,13 +141,11 @@ class Ball:
                     p = item
 
                 if (s.right() <= p.left()) or (s.left() >= p.right()):
-                    # если оба мяча летят вправо, то отталкиваем левый
                     if (s.delta.x > 0) and (p.delta.x > 0):
                         if (s.x > p.x):
                             p.delta.x = -p.delta.x
                         else:
                             s.delta.x = -s.delta.x
-                    # если оба мяча летят влево, то отталкиваем правый
                     elif (s.delta.x < 0) and (p.delta.x < 0):
                         if (s.x > p.x):
                             s.delta.x = -s.delta.x
@@ -145,7 +156,6 @@ class Ball:
                         p.delta.x = -p.delta.x
 
                 elif (s.bottom() <= p.top()) or (s.top() >= p.bottom()):
-                    #если оба мяча летят вниз, то отталкиваем верхний
                     if (s.delta.y > 0) and (p.delta.y > 0):
                         if (s.y > p.y):
                             p.delta.y = -p.delta.y
@@ -192,11 +202,19 @@ class Ball:
         # обрабатываем выход за поле
         # правая граница поля
         if (self.right() + self.delta.x >= cwidth):
-            self.delta.x = -self.delta.x
+            self.gameObjectManager.score.inc_left()
+            self.canvas.coords(self.id, cwidth/2, cheight/2, cwidth/2 + self.width, cheight/2 + self.height)
+            self.x = cwidth/2
+            self.y = cheight/2
+            return
 
         # левая граница поля
         if (self.left() - abs(self.delta.x) <= 0):
-            self.delta.x = -self.delta.x
+            self.gameObjectManager.score.inc_right()
+            self.canvas.coords(self.id, cwidth/2, cheight/2, cwidth/2 + self.width, cheight/2 + self.height)
+            self.x = cwidth/2
+            self.y = cheight/2
+            return
 
         # верхняя граница поля
         if (self.top() + self.delta.y <= 0):
@@ -238,7 +256,7 @@ class Racket:
         self.id = 0
         self.movedownkey = movedownkey
         self.moveupkey = moveupkey
-        self.speed = 10  # скорость движения ракетки в пикселях
+        self.speed = 10
         self.timerdown = False
         self.timerup = False
         self.type = "racket"
@@ -315,13 +333,11 @@ class Bonus:
 
 #  --------------------------------
 
-# Создаем форму, в ней - канвас
 master = Tkinter.Tk()
 canvas = Tkinter.Canvas(master, width=800, height=600, \
-        highlightthickness=0, relief='ridge')
+        highlightthickness=0, relief='ridge', background="#111111")
 
 canvas.pack()
-canvas.config(background="#111111")
 master.resizable(width=False, height=False)
 master.title("Ping-pong")
 
