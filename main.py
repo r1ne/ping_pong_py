@@ -14,9 +14,9 @@ class GameObjectManager:
             self.right = 0
             self.canvas = canvas
 
-            gfont =  tkFont.Font(family='Segoe', weight="bold", size=86)
+            sfont =  tkFont.Font(family='Segoe', weight="bold", size=86)
             self.id = self.canvas.create_text(100, 100, text="SCORE", \
-                    fill="#222222", font=gfont)
+                    fill="#222222", font=sfont)
             self.change_text()
 
         def inc_left(self):
@@ -34,8 +34,7 @@ class GameObjectManager:
             # width = bounds[2] - bounds[0]
             # height = bounds[3] - bounds[1]
             self.canvas.coords(self.id, self.canvas.winfo_reqwidth() / 2, \
-                    self.canvas.winfo_reqheight() / 2)
-
+                    self.canvas.winfo_reqheight() / 2) 
 
     def __init__(self, canvas, master):
         self.canvas = canvas
@@ -44,13 +43,20 @@ class GameObjectManager:
         self.score = self.Score(self.canvas)
 
         self.paused = 0
+        self.pause_time = 60
+        self.pause_afterid = 0
         gfont = font=tkFont.Font(family='Segoe', slant="italic", size=32)
+        tfont = font=tkFont.Font(family='Segoe', slant="italic", size=16)
         left = self.canvas.winfo_reqwidth() / 2
         top = self.canvas.winfo_reqheight() / 2
         self.pauseshadow = self.canvas.create_text(left + 1, top + 1, text="timeout", \
                 fill="#000000", font=gfont, state="hidden")
         self.pauseid = self.canvas.create_text(left, top, text="timeout", \
                 fill="#ffffff", font=gfont, state="hidden")
+        self.pausetimershadow = self.canvas.create_text(left + 1, top + 36, text="timeout", \
+                fill="#000000", font=tfont, state="hidden")
+        self.pausetimer = self.canvas.create_text(left, top + 35, text="timeout", \
+                fill="#444444", font=tfont, state="hidden")
 
         master.bind("<F9>", self.pause, add="+")
 
@@ -60,14 +66,34 @@ class GameObjectManager:
         if (self.paused):
             self.unpause()
         else:
-            self.paused = 1
-            self.canvas.itemconfig(self.pauseid, state="normal")
-            self.canvas.itemconfig(self.pauseshadow, state="normal")
+            if (self.pause_time > 0):
+                self.paused = 1
+                self.pause_timer()
+                self.canvas.itemconfig(self.pauseid, state="normal")
+                self.canvas.itemconfig(self.pauseshadow, state="normal")
+                self.canvas.itemconfig(self.pausetimer, state="normal")
+                self.canvas.itemconfig(self.pausetimershadow, state="normal")
+
+    def pause_timer(self):
+        if (self.paused):
+            if (self.pause_time == 0):
+                self.unpause()
+                return 0
+
+            text = "{}s left".format(self.pause_time)
+            self.canvas.itemconfig(self.pausetimer, text=text)
+            self.canvas.itemconfig(self.pausetimershadow, text=text)
+            self.pause_time = self.pause_time - 1
+
+            self.pause_afterid = self.master.after(1000, self.pause_timer)
 
     def unpause(self):
         self.paused = 0
         self.canvas.itemconfig(self.pauseid, state="hidden")
         self.canvas.itemconfig(self.pauseshadow, state="hidden")
+        self.canvas.itemconfig(self.pausetimer, state="hidden")
+        self.canvas.itemconfig(self.pausetimershadow, state="hidden")
+        self.master.after_cancel(self.pause_afterid)
 
     def addRacket(self, x=0, y=0, moveupkey="w", movedownkey="s", width=20, \
             height=80, bgcolor="#ffffff"):
@@ -368,7 +394,7 @@ master.title("Ping-pong")
 gm = GameObjectManager(canvas, master)
 
 gm.addBall(400, 300, 0, 10, 20)
-gm.addRacket(20, 10)
-gm.addRacket(canvas.winfo_reqwidth() - 40, 10, "i", "k")
+gm.addRacket(20, canvas.winfo_reqheight() / 2 - 40)
+gm.addRacket(canvas.winfo_reqwidth() - 40, canvas.winfo_reqheight() / 2 - 40, "i", "k")
 
 Tkinter.mainloop()
