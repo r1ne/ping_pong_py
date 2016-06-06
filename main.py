@@ -1,4 +1,4 @@
-# coding=cp1251
+# coding=utf-8
 
 import Tkinter
 import tkFont
@@ -14,9 +14,9 @@ class GameObjectManager:
             self.right = 0
             self.canvas = canvas
 
-            sfont =  tkFont.Font(family='Segoe', weight="bold", size=86)
+            self.score_font = tkFont.Font(family='Droid Sans Mono', size=86)
             self.id = self.canvas.create_text(100, 100, text="SCORE", \
-                    fill="#222222", font=sfont)
+                    fill="#222222", font=self.score_font)
             self.change_text()
 
         def inc_left(self):
@@ -30,9 +30,6 @@ class GameObjectManager:
         def change_text(self):
             self.canvas.itemconfig(self.id, \
                     text="{}:{}".format(self.left, self.right))
-            # bounds = self.canvas.bbox(self.id)
-            # width = bounds[2] - bounds[0]
-            # height = bounds[3] - bounds[1]
             self.canvas.coords(self.id, self.canvas.winfo_reqwidth() / 2, \
                     self.canvas.winfo_reqheight() / 2) 
 
@@ -45,8 +42,8 @@ class GameObjectManager:
         self.paused = 0
         self.pause_time = 60
         self.pause_afterid = 0
-        gfont = font=tkFont.Font(family='Segoe', slant="italic", size=32)
-        tfont = font=tkFont.Font(family='Segoe', slant="italic", size=16)
+        gfont = font=tkFont.Font(family='Droid Sans Mono', slant="italic", size=32)
+        tfont = font=tkFont.Font(family='Droid Sans Mono', slant="italic", size=16)
         left = self.canvas.winfo_reqwidth() / 2
         top = self.canvas.winfo_reqheight() / 2
         self.pauseshadow = self.canvas.create_text(left + 1, top + 1, text="timeout", \
@@ -218,37 +215,37 @@ class Ball:
                         s.delta.y = -s.delta.y
                         p.delta.y = -p.delta.y
 
-            elif (item.type == "racket"):  # если мяч self столкнулся с ракеткой item
-                if (self.right() <= item.left()): # если мяч левее ракетки
-                    # 2.35619449 - 135 градусов в радианах,
-                    # 1.91986218 - 110 градусов в радианах
+            elif (item.type == "racket"):  # РµСЃР»Рё РјСЏС‡ self СЃС‚РѕР»РєРЅСѓР»СЃСЏ СЃ СЂР°РєРµС‚РєРѕР№ item
+                if (self.right() <= item.left()): # РµСЃР»Рё РјСЏС‡ Р»РµРІРµРµ СЂР°РєРµС‚РєРё
+                    # 2.35619449 - 135 РіСЂР°РґСѓСЃРѕРІ РІ СЂР°РґРёР°РЅР°С…,
+                    # 1.91986218 - 110 РіСЂР°РґСѓСЃРѕРІ РІ СЂР°РґРёР°РЅР°С…
                     angle = -(2.35619449 + 1.91986218 * (self.y - item.y) / item.height)
                     self.delta = self.calc_projections(self.speed, angle)
-                elif (self.left() >= item.right()): # если мяч правее ракетки
-                    # 0.785398163 - 45 градусов в радианах
-                    # 1.9198621 - 110 градусов в радианах
+                elif (self.left() >= item.right()): # РµСЃР»Рё РјСЏС‡ РїСЂР°РІРµРµ СЂР°РєРµС‚РєРё
+                    # 0.785398163 - 45 РіСЂР°РґСѓСЃРѕРІ РІ СЂР°РґРёР°РЅР°С…
+                    # 1.9198621 - 110 РіСЂР°РґСѓСЃРѕРІ РІ СЂР°РґРёР°РЅР°С…
                     angle = -(0.785398163 - 1.91986218 * (self.y - item.y) / item.height)
                     self.delta = self.calc_projections(self.speed, angle)
                 elif ((self.bottom() + self.delta.y >= item.top()) or\
                      (item.timerup) and (self.bottom() + self.delta.y >= item.top() - item.speed))\
                      and (self.bottom() <= item.height / 2 + item.top()):
-                        # 1.22111111 - 75 градусов в радианах
-                        # 0.52333333 - 30 градусов в радианах
+                        # 1.22111111 - 75 РіСЂР°РґСѓСЃРѕРІ РІ СЂР°РґРёР°РЅР°С…
+                        # 0.52333333 - 30 РіСЂР°РґСѓСЃРѕРІ РІ СЂР°РґРёР°РЅР°С…
                         angle = -(1.22111111 - 0.52333333 * (self.x - item.x) / item.width)
                         self.delta = self.calc_projections(self.speed, angle)
                 elif (self.top() + self.delta.y <= item.bottom()) or\
                      (item.timerdown) and (self.top() + self.delta.y <= item.bottom() + item.speed):
-                        # 4.9716666 - 285 градусов в радианах
+                        # 4.9716666 - 285 РіСЂР°РґСѓСЃРѕРІ РІ СЂР°РґРёР°РЅР°С…
                         angle = -(4.9716666 + 0.52333333 * (self.x - item.x) / item.width)
                         self.delta = self.calc_projections(self.speed, angle)
 
-        # ширина канваса
+        # С€РёСЂРёРЅР° РєР°РЅРІР°СЃР°
         cwidth = self.canvas.winfo_reqwidth()
-        # высота канваса
+        # РІС‹СЃРѕС‚Р° РєР°РЅРІР°СЃР°
         cheight = self.canvas.winfo_reqheight()
 
-        # обрабатываем выход за поле
-        # правая граница поля
+        # РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј РІС‹С…РѕРґ Р·Р° РїРѕР»Рµ
+        # РїСЂР°РІР°СЏ РіСЂР°РЅРёС†Р° РїРѕР»СЏ
         if (self.right() + self.delta.x >= cwidth):
             self.gameObjectManager.score.inc_left()
             self.canvas.coords(self.id, cwidth/2, cheight/2, cwidth/2 + self.width, cheight/2 + self.height)
@@ -256,7 +253,7 @@ class Ball:
             self.y = cheight/2
             return
 
-        # левая граница поля
+        # Р»РµРІР°СЏ РіСЂР°РЅРёС†Р° РїРѕР»СЏ
         if (self.left() - abs(self.delta.x) <= 0):
             self.gameObjectManager.score.inc_right()
             self.canvas.coords(self.id, cwidth/2, cheight/2, cwidth/2 + self.width, cheight/2 + self.height)
@@ -264,11 +261,11 @@ class Ball:
             self.y = cheight/2
             return
 
-        # верхняя граница поля
+        # РІРµСЂС…РЅСЏСЏ РіСЂР°РЅРёС†Р° РїРѕР»СЏ
         if (self.top() + self.delta.y <= 0):
             self.delta.y = -self.delta.y
 
-        # нижняя граница поля
+        # РЅРёР¶РЅСЏСЏ РіСЂР°РЅРёС†Р° РїРѕР»СЏ
         if (self.bottom() + self.delta.y >= cheight):
             self.delta.y = -self.delta.y
 
@@ -393,8 +390,9 @@ master.title("Ping-pong")
 
 gm = GameObjectManager(canvas, master)
 
-gm.addBall(400, 300, 0, 10, 20)
-gm.addRacket(20, canvas.winfo_reqheight() / 2 - 40)
-gm.addRacket(canvas.winfo_reqwidth() - 40, canvas.winfo_reqheight() / 2 - 40, "i", "k")
+gm.addBall(x=400, y=300, angle=0, speed=5, size=20)
+gm.addRacket(x=20, y=canvas.winfo_reqheight() / 2 - 40)
+gm.addRacket(x=canvas.winfo_reqwidth() - 40, y=canvas.winfo_reqheight() / 2 - 40, \
+             moveupkey="i", movedownkey="k")
 
 Tkinter.mainloop()
